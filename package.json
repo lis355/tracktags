@@ -2,6 +2,13 @@
 	"name": "tracktags",
 	"version": "1.0.0",
 	"license": "MIT",
+	"bin": {
+		"ttag": "./main.js"
+	},
+	"scripts": {
+		"installGlobalCLI": "npm install -g",
+		"uninstallGlobalCLI": "npm uninstall -g"
+	},
 	"devDependencies": {
 		"eslint": "^7.20.0",
 		"eslint-config-protop": "^1.0.0"

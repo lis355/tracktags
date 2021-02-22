@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const { spawn } = require("child_process");
 
 const ndapp = require("ndapp");
@@ -6,13 +8,13 @@ const sharp = require("sharp");
 const filenamify = require("filenamify");
 
 async function executeShellCommand(cmd) {
-	return new Promise(resolve => {
+	return new Promise((resolve, reject) => {
 		const child = spawn(cmd, { shell: true });
 
-		child.stdout.on("data", data => app.log.info(data.toString()));
-		child.stderr.on("data", data => app.log.info(data.toString()));
+		// child.stdout.on("data", data => app.log.info(data.toString()));
+		// child.stderr.on("data", data => app.log.info(data.toString()));
 
-		child.on("exit", resolve);
+		child.on("exit", exitCode => exitCode ? reject(new Error("Process exited with error code " + exitCode)) : resolve());
 	});
 }
 
@@ -28,10 +30,6 @@ function parseMetadata(filePath) {
 
 function formatMetadata(metadata) {
 	return [METADATA_HEADER, ...metadata.mapToArray((key, value) => `${key}=${value}`)].join("\n");
-}
-
-function nameCase(s) {
-	return s.split(" ").filter(Boolean).map(app.libs._.capitalize).join(" ");
 }
 
 ndapp(async () => {
@@ -92,15 +90,25 @@ ndapp(async () => {
 			type: "number",
 			description: "Размер обложки (строна в пикселях, обложка квадратная)",
 			default: 500
+		})
+		.option("acronyms", {
+			array: true,
+			type: "string",
+			description: "Акронимы, в которых не нужно менять регистр",
+			default: ["OST", "EP", "LP", "feat"]
 		});
+
+	function nameCase(s) {
+		return s.split(" ").filter(Boolean).map(word => !argv.acronyms.includes(word) ? app.libs._.capitalize(word) : word).join(" ");
+	}
 
 	const inputDirectory = argv.input;
 	const outputDirectory = argv.output;
 	const outputTempDirectory = app.path.join(outputDirectory, "temp");
-	const caseArtist = argv.caseArtist;
 
 	if (!app.fs.existsSync(inputDirectory)) throw new Error("No input directory");
 
+	app.fs.removeSync(outputDirectory);
 	app.fs.ensureDirSync(outputTempDirectory);
 
 	let trackInfos = [];
@@ -130,8 +138,8 @@ ndapp(async () => {
 		}
 	}
 
-	let artist;
-	let album;
+	let artist = argv.artist;
+	let album = argv.album;
 	let genre = argv.genre;
 	let year = argv.year;
 	let trackTagsAmount = 0;
@@ -140,7 +148,7 @@ ndapp(async () => {
 		const metadata = info.metadata;
 		if (!artist &&
 			metadata.artist) {
-			artist = caseArtist ? nameCase(metadata.artist) : metadata.artist;
+			artist = argv.caseArtist ? nameCase(metadata.artist) : metadata.artist;
 		}
 
 		if (!album &&
@@ -192,13 +200,16 @@ ndapp(async () => {
 		}
 	});
 
+	app.log.info(`${artist} - ${album} ${genre || ""} ${year || ""}`);
+
 	const outputAlbumDirectory = app.path.join(outputDirectory, filenamify(artist), filenamify(album));
 	app.fs.ensureDirSync(outputAlbumDirectory);
 
 	app.fs.copySync(coverResizedPath, app.path.join(outputAlbumDirectory, "cover.jpg"));
 
 	for (const trackInfo of trackInfos) {
-		const outputFilePath = app.path.join(outputAlbumDirectory, `${trackInfo.metadata.track} ${filenamify(trackInfo.metadata.artist)} - ${filenamify(trackInfo.metadata.title)}.mp3`);
+		const outputFileName = `${trackInfo.metadata.track} ${filenamify(trackInfo.metadata.artist)} - ${filenamify(trackInfo.metadata.title)}.mp3`;
+		const outputFilePath = app.path.join(outputAlbumDirectory, outputFileName);
 
 		// Удаление всех тегов
 		let inputTempFilePath = trackInfo.filePath;
@@ -215,6 +226,8 @@ ndapp(async () => {
 		// Запись картинки
 		inputTempFilePath = outputTempFilePath;
 		await executeShellCommand(`ffmpeg -i "${inputTempFilePath}" -i "${coverResizedPath}" -y -map 0:0 -map 1:0 -codec:a copy "${outputFilePath}"`);
+
+		app.log.info(outputFileName);
 	}
 
 	app.fs.removeSync(outputTempDirectory);
