@@ -1,0 +1,14 @@
+Удаление всех тегов
+ffmpeg -i input.mp3 -y -vn -codec:a copy -map_metadata -1 out.mp3
+
+Извлечение картинки
+ffmpeg -i input.mp3 -y -an -vcodec copy cover.jpg
+
+Извлечение тегов
+ffmpeg -i input.mp3 -y -f ffmetadata m.txt
+
+Перезапись тегов
+ffmpeg -i input.mp3 -i m.txt -y -vn -codec:a copy -map_metadata 1 -write_id3v2 1 out.mp3
+
+Запись картинки
+ffmpeg -i out.mp3 -i cover.jpg -map 0:0 -map 1:0 -codec:a copy out2.mp3

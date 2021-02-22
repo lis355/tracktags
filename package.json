@@ -1,0 +1,15 @@
+{
+	"name": "tracktags",
+	"version": "1.0.0",
+	"license": "MIT",
+	"devDependencies": {
+		"eslint": "^7.20.0",
+		"eslint-config-protop": "^1.0.0"
+	},
+	"dependencies": {
+		"filenamify": "^4.2.0",
+		"ndapp": "^1.0.17",
+		"sharp": "^0.27.1",
+		"yargs": "^16.2.0"
+	}
+}
