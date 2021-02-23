@@ -115,7 +115,9 @@ ndapp(async () => {
 	let coverProcessed = false;
 	const coverResizedPath = app.path.join(outputTempDirectory, "coverResized.jpg");
 
-	const files = app.fs.readdirSync(inputDirectory);
+	const files = app.fs.readdirSync(inputDirectory)
+		.filter(fileName => fileName.toLowerCase().endsWith(".mp3"));
+
 	for (let fileName of files) {
 		const filePath = app.path.join(inputDirectory, fileName);
 		const metadataFilePath = app.path.join(outputTempDirectory, fileName + ".txt");
@@ -158,7 +160,7 @@ ndapp(async () => {
 
 		if (!genre &&
 			metadata.genre) {
-			genre = metadata.genre;
+			genre = nameCase(metadata.genre);
 		}
 
 		if (!year &&
