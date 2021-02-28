@@ -1,42 +1,24 @@
 #!/usr/bin/env node
 
-const { spawn } = require("child_process");
-
 const ndapp = require("ndapp");
 const yargs = require("yargs/yargs");
 const sharp = require("sharp");
 const filenamify = require("filenamify");
 
-async function executeShellCommand(cmd) {
-	return new Promise((resolve, reject) => {
-		const child = spawn(cmd, { shell: true });
+const executeShellCommand = require("./src/executeShellCommand");
+const { parseMetadata, formatMetadata } = require("./src/metadata");
 
-		// child.stdout.on("data", data => app.log.info(data.toString()));
-		// child.stderr.on("data", data => app.log.info(data.toString()));
-
-		child.on("exit", exitCode => exitCode ? reject(new Error("Process exited with error code " + exitCode)) : resolve());
-	});
-}
-
-const METADATA_HEADER = ";FFMETADATA1";
-
-function parseMetadata(filePath) {
-	return app.fs.readFileSync(filePath, { encoding: "utf-8" })
-		.split("\n")
-		.filter(line => line && line !== METADATA_HEADER)
-		.map(line => line.split("="))
-		.mapToObject(line => ({ key: line[0], value: line[1] }));
-}
-
-function formatMetadata(metadata) {
-	return [METADATA_HEADER, ...metadata.mapToArray((key, value) => `${key}=${value}`)].join("\n");
-}
+const COVER_SIZE = 500;
+const ACRONYMS = ["OST", "EP", "LP", "feat"];
 
 ndapp(async () => {
 	const { argv } = yargs(process.argv.slice(2))
 		.usage(`${require("./package.json").name} скрипт для форматирования тэгов и структуры альбома`)
 		.strict()
 		.version(false)
+		.option("help", {
+			describe: "Помощь"
+		})
 		.option("input", {
 			alias: "i",
 			describe: "Папка с треками",
@@ -89,13 +71,13 @@ ndapp(async () => {
 			alias: "cs",
 			type: "number",
 			description: "Размер обложки (строна в пикселях, обложка квадратная)",
-			default: 500
+			default: COVER_SIZE
 		})
 		.option("acronyms", {
 			array: true,
 			type: "string",
 			description: "Акронимы, в которых не нужно менять регистр",
-			default: ["OST", "EP", "LP", "feat"]
+			default: ACRONYMS
 		});
 
 	function nameCase(s) {
