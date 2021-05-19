@@ -80,8 +80,36 @@ ndapp(async () => {
 			default: ACRONYMS
 		});
 
+	function isLetter(s) {
+		return s.length === 1 && s.toLowerCase() !== s.toUpperCase();
+	}
+
 	function nameCase(s) {
-		return s.split(" ").filter(Boolean).map(word => !argv.acronyms.includes(word) ? app.libs._.capitalize(word) : word).join(" ");
+		let r = "";
+		let word = "";
+
+		const processWord = () => {
+			if (word) {
+				word = !argv.acronyms.includes(word) ? app.libs._.capitalize(word) : word;
+				r += word;
+				word = "";
+			}
+		};
+
+		for (let i = 0; i < s.length; i++) {
+			const c = s[i];
+			if (isLetter(c)) {
+				word += c;
+			} else {
+				processWord();
+
+				r += c;
+			}
+		}
+
+		processWord();
+
+		return r;
 	}
 
 	const inputDirectory = argv.input;
