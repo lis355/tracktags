@@ -13,9 +13,7 @@
             ],
             "program": "${workspaceFolder}/main.js",
             "args": [
-                "-i",
                 "./test/album/",
-                "-o",
                 "./test/out/"
             ]
         }
